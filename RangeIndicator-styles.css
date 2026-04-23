@@ -1,0 +1,65 @@
+/* === Range Shape === */
+.range-shape {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 9px;
+	--range-shape-cell-size: 16px;
+}
+
+.range-shape-grid {
+    display: inline-grid;
+}
+
+/* Any class that starts with range-shape-cell */
+[class^="range-shape-cell"] {
+    width: var(--range-shape-cell-size);
+    height: var(--range-shape-cell-size);
+    position: relative;
+}
+
+.range-shape-cell-0,
+.range-shape-cell-3 { 
+	/* empty cell */ 
+	border-width: 1px;
+	border-style: dotted;
+	border-color: oklab(from #808080 l a b / 25%);
+}
+.range-shape-cell-1,
+.range-shape-cell-2 { 
+	background: oklab(from #A77D41 l a b / 40%);
+	border-width: 1px;
+	border-style: solid;
+	border-color: oklab(from #A77D41 l a b / 90%);
+}
+.range-shape-cell-11,
+.range-shape-cell-12 { 
+	background: oklab(from #EEEEEE l a b / 40%);
+	border-width: 1px;
+	border-style: solid;
+	border-color: oklab(from #EEEEEE l a b / 90%);
+}
+.range-shape-cell-3 { 
+	/* no background */ 
+}
+
+.range-shape-cell-2::after {
+    content: "⬤"; /* or "O" */
+    font-size: calc(var(--range-shape-cell-size) * 0.6);
+    font-weight: 700;
+    color: var(--wiki-content-text-color);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.range-shape-cell-3::after {
+    content: "✚"; /* or "+" */
+    font-size: calc(var(--range-shape-cell-size) * 0.7);
+    font-weight: 700;
+    color: var(--wiki-content-text-color);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
