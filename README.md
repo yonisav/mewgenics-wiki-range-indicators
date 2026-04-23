@@ -1,5 +1,5 @@
 # mewgenics-wiki-range-indicators
-Range indicators implementation for the mewgenics wiki
+Range indicators implementation for the mewgenics wiki https://mewgenics.wiki.gg/
 
 Credit to IsaacBee from the wiki for doing most of the CSS and HTML work.
 
