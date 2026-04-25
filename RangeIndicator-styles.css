@@ -26,21 +26,36 @@
 	border-color: oklab(from #808080 l a b / 25%);
 }
 .range-shape-cell-1,
-.range-shape-cell-2 { 
+.range-shape-cell-2,
+.range-shape-cell-5{ 
 	background: oklab(from #A77D41 l a b / 40%);
 	border-width: 1px;
 	border-style: solid;
 	border-color: oklab(from #A77D41 l a b / 90%);
 }
 .range-shape-cell-11,
-.range-shape-cell-12 { 
-	background: oklab(from #EEEEEE l a b / 40%);
+.range-shape-cell-12,
+.range-shape-cell-15{ 
+	background: oklab(from #BBBBBB l a b / 40%);
 	border-width: 1px;
 	border-style: solid;
-	border-color: oklab(from #EEEEEE l a b / 90%);
+	border-color: oklab(from #BBBBBB l a b / 90%);
 }
 .range-shape-cell-3 { 
 	/* no background */ 
+}
+
+.range-shape-cell-4{
+	background: oklab(from #A77D41 l a b / 10%);
+	border-width: 1px;
+	border-style: solid;
+	border-color: oklab(from #A77D41 l a b / 50%);
+}
+.range-shape-cell-14{
+	background: oklab(from #BBBBBB l a b / 10%);
+	border-width: 1px;
+	border-style: solid;
+	border-color: oklab(from #BBBBBB l a b / 50%);
 }
 
 .range-shape-cell-2::after {
@@ -53,7 +68,10 @@
     left: 50%;
     transform: translate(-50%, -50%);
 }
-.range-shape-cell-3::after {
+.range-shape-cell-3::after,
+.range-shape-cell-5::after,
+.range-shape-cell-13::after,
+.range-shape-cell-15::after{
     content: "✚"; /* or "+" */
     font-size: calc(var(--range-shape-cell-size) * 0.7);
     font-weight: 700;
