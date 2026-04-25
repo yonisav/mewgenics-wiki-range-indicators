@@ -1,19 +1,23 @@
--- This module takes aruments form the game's GON files (as prvided in the RangeIndicator Template) and intpret them to work with the FurnitureShape module --
-local FurnitureShape = require('Module:FurnitureShape')
+-- This module takes aruments form the game's GON files (as prvided in the RangeIndicator Template) and intpret them to work with the GridShape module --
+local GridShape = require('Module:GridShape')
 local p = {}
 
--- Generate FuntitureShape string argument for the standard shape. see: "Manhattan Distance" for math explenation
+-- Generate GridShape string argument for the standard shape. see: "Manhattan Distance" for math explenation
 local function standard_aoe(is_aoe, target_mode, min_range, max_range)
     local result = ""
     local color = 0
     local distance = 999
-    for i = 0, max_range*2-1 do
-    	for j = 0, max_range*2-1 do
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
+    for i = 1, max_range*2-1 do
+    	for j = 1, max_range*2-1 do
     		distance = math.abs(max_range - i) + math.abs(max_range - j)
     		if (distance == 0) and (not is_aoe) then
     			color = 3
     		elseif distance >= min_range and distance < max_range then
-    			color = 1
+    			color = (1 + offset)
     		else
     			color = 0
     		end
@@ -32,10 +36,14 @@ end
 local function cone_aoe(is_aoe, target_mode, min_range, max_range)
     local result = ""
     local color = 0
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
     for i = -max_range+2, max_range do
     	for j = 0, max_range do
     		if  j+i > min_range and i-j < min_range then
-    			color = 1
+    			color = (1 + offset)
     		else
     			color = 0
     		end
@@ -57,10 +65,14 @@ end
 local function line_aoe(is_aoe, target_mode, min_range, max_range)
     local result = ""
     local color = 0
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
     for i = -1, 2 do
     	for j = 0, max_range do
     		if  j >= min_range and i==0 then
-    			color = 1
+    			color = (1 + offset)
     		else
     			color = 0
     		end
@@ -82,6 +94,10 @@ end
 local function cross_aoe(is_aoe, target_mode, min_range, max_range)
     local result = ""
     local color = 0
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
     -- account for the default
     if max_range == 0 then
     	max_range = 1
@@ -90,7 +106,7 @@ local function cross_aoe(is_aoe, target_mode, min_range, max_range)
     for i = -max_range, max_range do
     	for j = -max_range, max_range do
     		if  (j == 0 and math.abs(i) >= min_range) or (i == 0 and math.abs(j) >= min_range) then
-    			color = 1
+    			color = (1 + offset)
     		else
     			color = 0
     		end
@@ -114,10 +130,14 @@ end
 local function perpline_aoe(is_aoe, target_mode, min_range, max_range)
     local result = ""
     local color = 0
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
     for i = -max_range/2, max_range/2 do
     	for j = 0, 4 do
     		if  (j == 3 and i >= min_range and i < max_range) then
-    			color = 1
+    			color = (1 + offset)
     		else
     			color = 0
     		end
@@ -136,50 +156,67 @@ local function perpline_aoe(is_aoe, target_mode, min_range, max_range)
     end
     return result
 end
+
 
 -- Custom targeting - This is Tylers punishmet for me
-local function custom_aoe(is_aoe, target_mode, min_range, max_range)
-    local result = ""
-    local color = 0
-    local range = 10
-    if max_range > 0 then
-    	max_range = max_range/2
+-- TODO: add aoe_symmetry
+local function custom_aoe(is_aoe, target_mode, min_range, max_range,  
+	custom_aoe, aoe_symmetry)
+	local points = {}
+    local min_x, max_x, min_y, max_y
+
+    -- Parse the string with regex to find [x, y] pairs 
+    -- (also account for the cacses where the , is missing)
+    for x_str, y_str in input:gmatch("%[(-?%d+),?%s*(-?%d+)%]") do
+        local x, y = tonumber(x_str), tonumber(y_str)
+        
+        points[x] = points[x] or {}
+        points[x][y] = true
+
+        min_x = min_x and math.min(min_x, x) or x
+        max_x = max_x and math.max(max_x, x) or x
+        min_y = min_y and math.min(min_y, y) or y
+        max_y = max_y and math.max(max_y, y) or y
     end
-    for i = -range, range do
-    	for j = -range, range do
-    		if  (j == 3 and i >= min_range and i < max_range) then
-    			color = 1
-    		else
-    			color = 0
-    		end
-    		if (j == 0) and (i == 0) then
-    			color = 3
-    		end
-    		-- don't add space at the start
-    		if j > -max_range then
-    			result = result.." "
-    		end
-    		result = result..color
-    	end
-    	if i < max_range then
-    		result = result..";"
-    	end
+    
+    if not min_x then return "" end
+
+    local output = {}
+    
+    for x = min_x, max_x do
+        local row_values = {}
+        for y = min_y, max_y do
+            if points[x] and points[x][y] then
+                table.insert(row_values, "1")
+            else
+                table.insert(row_values, "0")
+            end
+        end
+        
+        table.insert(output, table.concat(row_values, " ") .. ";")
     end
-    return result
+
+    return table.concat(output, "")
 end
 
+--test mode for feeding a direct string. Tihs will need to be in final format
+-- I.e: "1 2 3 4;5 6 7 8" and so on
+local function test_aoe(custom_aoe)
+	return custom_aoe
+end
 
 -- Main function
 function p.render(frame)
-	local is_aoe = frame.args.is_aoe -- for range or aoe indicator  Default: False (Range) 
-	local target_mode =  frame.args.target_mode -- who this targets  Default: None 
-	local aoe_mode = frame.args.aoe_mode -- one of several preprogrammed shapes or custom Default: standard
-	local min_range = frame.args.min_range -- default: 0 
-	local max_range = frame.args.max_range -- default: 0 
-	local aoe_excludes_self = frame.args.aoe_excludes_self -- true/false default: true
-	local custom_aoe = frame.args.custom_aoe -- an array storing custom aoe shape
+	local is_aoe = frame.args.is_aoe or "false" -- for range or aoe indicator  Default: False (Range) 
+	local target_mode =  frame.args.target_mode or "tile" -- who this targets  Default: None 
+	local aoe_mode = frame.args.aoe_mode or "standard" -- one of several preprogrammed shapes or custom Default: standard
+	local min_range = frame.args.min_range or "0" -- default: 0 
+	local max_range = frame.args.max_range or "0" -- default: 0 
+	local aoe_excludes_self = frame.args.aoe_excludes_self or "true" -- true/false default: true
+	local custom_aoe = frame.args.custom_aoe or "" -- an array storing custom aoe shape
+	local aoe_symmetry = frame.aoe_symmetry or "none"
 	
-	local furniture_string = ""
+	local grid_string = ""
 	
 	is_aoe = mw.text.trim(is_aoe) == "true"
 	target_mode = mw.text.trim(target_mode)
@@ -188,6 +225,7 @@ function p.render(frame)
 	max_range = tonumber(mw.text.trim(max_range))
 	aoe_excludes_self =  mw.text.trim(aoe_excludes_self) == "true"
 	custom_aoe = mw.text.trim(custom_aoe)
+	aoe_symmetry = mw.text.trim(aoe_symmetry)
 	
 	if aoe_excludes_self then
 		if min_range < 1 then
@@ -197,33 +235,52 @@ function p.render(frame)
 	
 	-- select the correct shape
     if aoe_mode == "standard" then
-    	furniture_string = standard_aoe(is_aoe, target_mode, min_range, max_range)
+    	grid_string = standard_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "cone" then
-    	furniture_string = cone_aoe(is_aoe, target_mode, min_range, max_range)
+    	grid_string = cone_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "line" then
-    	furniture_string = line_aoe(is_aoe, target_mode, min_range, max_range)
+    	grid_string = line_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "cross" then
-    	furniture_string = cross_aoe(is_aoe, target_mode, min_range, max_range)
+    	grid_string = cross_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "8cross" then
-    	furniture_string = e_cross_aoe(is_aoe, target_mode, min_range, max_range)
+    	grid_string = e_cross_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "square" then
-    	furniture_string = square_aoe(is_aoe, target_mode, min_range, max_range)
+    	grid_string = square_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "circle" then
-    	furniture_string = circle_aoe(is_aoe, target_mode, min_range, max_range)
+    	grid_string = circle_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "perpline" then
-    	furniture_string = perpline_aoe(is_aoe, target_mode, min_range, max_range)
+    	grid_string = perpline_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "diagcross" then
-    	furniture_string = diagcross_aoe(is_aoe, target_mode, min_range, max_range)
+    	grid_string = diagcross_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "custom" then
-    	furniture_string = custom_aoe(is_aoe, target_mode, min_range, max_range, custom_aoe)
+    	grid_string = custom_aoe(is_aoe, target_mode, min_range, max_range, custom_aoe)
+    elseif aoe_mode == "test" then
+    	grid_string = test_aoe(custom_aoe)
     else
-    	furniture_string = "" -- will print error
+    	grid_string = "" -- will print error
     end
 	
-	-- return furniture_string -- test
+	--return grid_string -- test
 	
-	return FurnitureShape.render({ args = { furniture_string } }) -- will this work?
+	return GridShape.render({ args = { 
+		grid_string,
+		type = "range"
+	} })
     
+end
+
+function p.test()
+	local frame = mw.getCurrentFrame()
+	frame.args = {
+		is_aoe = "true",
+		target_mode = "direction",
+		aoe_mode = "cone",
+		min_range = "1",
+		max_range = "3",
+		aoe_excludes_self = "true"
+	}
+
+	return p.render(frame)
 end
 
 return p
