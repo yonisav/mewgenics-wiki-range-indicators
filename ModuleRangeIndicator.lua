@@ -11,12 +11,16 @@ local function standard_aoe(is_aoe, target_mode, min_range, max_range)
    	if is_aoe then
     	offset = 10
     end
-    for i = 1, max_range*2-1 do
-    	for j = 1, max_range*2-1 do
+    -- hanle abilities that cover the entire screen
+    if max_range > 14 then
+    	return "1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;"
+    end
+    for i=0, (max_range*2) do
+    	for j=0, (max_range*2) do
     		distance = math.abs(max_range - i) + math.abs(max_range - j)
     		if (distance == 0) and (not is_aoe) then
     			color = 3
-    		elseif distance >= min_range and distance < max_range then
+    		elseif distance >= min_range and distance <= max_range then
     			color = (1 + offset)
     		else
     			color = 0
@@ -69,7 +73,7 @@ local function line_aoe(is_aoe, target_mode, min_range, max_range)
    	if is_aoe then
     	offset = 10
     end
-    for i = -1, 2 do
+    for i = -1, 1 do
     	for j = 0, max_range do
     		if  j >= min_range and i==0 then
     			color = (1 + offset)
@@ -160,36 +164,79 @@ end
 
 -- Custom targeting - This is Tylers punishmet for me
 -- TODO: add aoe_symmetry
-local function custom_aoe(is_aoe, target_mode, min_range, max_range,  
+local function custom_aoe_f(is_aoe, target_mode, min_range, max_range,  
 	custom_aoe, aoe_symmetry)
+	
 	local points = {}
-    local min_x, max_x, min_y, max_y
+    local min_x, max_x, min_y, max_y = 0,0,0,0
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
 
     -- Parse the string with regex to find [x, y] pairs 
     -- (also account for the cacses where the , is missing)
-    for x_str, y_str in input:gmatch("%[(-?%d+),?%s*(-?%d+)%]") do
+    for y_str, x_str in custom_aoe:gmatch("%[(-?%d+),?%s*(-?%d+)%]") do
         local x, y = tonumber(x_str), tonumber(y_str)
+        
         
         points[x] = points[x] or {}
         points[x][y] = true
-
+		
         min_x = min_x and math.min(min_x, x) or x
         max_x = max_x and math.max(max_x, x) or x
         min_y = min_y and math.min(min_y, y) or y
         max_y = max_y and math.max(max_y, y) or y
+        
+        if aoe_symmetry == "four_way" then
+        	points[y] = points[y] or {}
+			points[y][-x] = true
+			points[-x] = points[-x] or {}
+			points[-x][-y] = true
+			points[-y] = points[-y] or {}
+			points[-y][x] = true
+			
+			min_x = math.min(min_x, -x)
+			max_x = math.max(max_x, -x)
+        	min_y = math.min(min_y, -y)
+        	max_y = math.max(max_y, -y)
+        end
+        
     end
     
     if not min_x then return "" end
+    
+    -- if no targeting, duplicate to the edge
+    if target_mode == "none" then
+        local draw_distance = 7
+        for i = 1, draw_distance do
+        	for x = min_x, max_x do
+        		for y = min_y, max_y do
+        			if points[x] and points[x][y] then
+        				points[x*i] = points[x*i] or {}
+        				points[x*i][y*i] = true
+            		end
+            	end
+        	end
+		end
+	    min_x = min_x*draw_distance
+        max_x = max_x*draw_distance
+        min_y = min_y*draw_distance
+        max_y = max_y*draw_distance
+    end
+
 
     local output = {}
     
     for x = min_x, max_x do
         local row_values = {}
         for y = min_y, max_y do
-            if points[x] and points[x][y] then
-                table.insert(row_values, "1")
+        	if x == 0 and y == 0 and not is_aoe then
+                table.insert(row_values, 3)
+            elseif points[x] and points[x][y] then
+                table.insert(row_values, 1+offset)
             else
-                table.insert(row_values, "0")
+                table.insert(row_values, 0)
             end
         end
         
@@ -214,7 +261,7 @@ function p.render(frame)
 	local max_range = frame.args.max_range or "0" -- default: 0 
 	local aoe_excludes_self = frame.args.aoe_excludes_self or "true" -- true/false default: true
 	local custom_aoe = frame.args.custom_aoe or "" -- an array storing custom aoe shape
-	local aoe_symmetry = frame.aoe_symmetry or "none"
+	local aoe_symmetry = frame.args.aoe_symmetry or "none"
 	
 	local grid_string = ""
 	
@@ -231,6 +278,12 @@ function p.render(frame)
 		if min_range < 1 then
 		 	min_range = 1 
 		end
+	end
+	
+	-- this is a failsafe to ensure we don't crash the page by making too big of a shape
+	-- te diagonal of a 10x10 square is ~14.1 so 15 should always cover the entire board.
+	if max_range > 10 then
+		max_range = 15
 	end
 	
 	-- select the correct shape
@@ -253,7 +306,8 @@ function p.render(frame)
     elseif aoe_mode == "diagcross" then
     	grid_string = diagcross_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "custom" then
-    	grid_string = custom_aoe(is_aoe, target_mode, min_range, max_range, custom_aoe)
+    	grid_string = custom_aoe_f(is_aoe, target_mode, min_range, max_range,  
+	custom_aoe, aoe_symmetry)
     elseif aoe_mode == "test" then
     	grid_string = test_aoe(custom_aoe)
     else
