@@ -17,14 +17,18 @@ local function standard_aoe(is_aoe, target_mode, min_range, max_range)
     end
     for i=0, (max_range*2) do
     	for j=0, (max_range*2) do
+    		
     		distance = math.abs(max_range - i) + math.abs(max_range - j)
-    		if (distance == 0) and (not is_aoe) then
-    			color = 3
-    		elseif distance >= min_range and distance <= max_range then
+
+    		if distance >= min_range and distance <= max_range then
     			color = (1 + offset)
     		else
     			color = 0
     		end
+    		if (distance == 0) and (not is_aoe) then
+    			color = color+3
+    		end
+    		
     		if j > 0 then
     			result = result.." "
     		end
@@ -83,8 +87,8 @@ local function line_aoe(is_aoe, target_mode, min_range, max_range)
     		if j > 0 then
     			result = result.." "
     		end
-    		if (j == 0) and (i==0) then
-    			color = 3
+    		if (j == 0) and (i==0) and (not is_aoe) then
+    			color = color + 3
     		end
     		result = result..color
     	end
@@ -115,7 +119,7 @@ local function cross_aoe(is_aoe, target_mode, min_range, max_range)
     			color = 0
     		end
     		if (j == 0) and (i==0) and (not is_aoe) then
-    			color = 3
+    			color = color + 3
     		end
     		-- don't add space at the start
     		if j > -max_range then
@@ -129,6 +133,42 @@ local function cross_aoe(is_aoe, target_mode, min_range, max_range)
     end
     return result
 end
+
+local function  diagcross_aoe(is_aoe, target_mode, min_range, max_range)
+    local result = ""
+    local color = 0
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
+    -- account for the default
+    if max_range == 0 then
+    	max_range = 1
+    	is_aoe = false
+    end
+    for i = -max_range, max_range do
+    	for j = -max_range, max_range do
+    		if  math.abs(i) == math.abs(j) and math.abs(i) >= min_range then
+    			color = (1 + offset)
+    		else
+    			color = 0
+    		end
+    		if (j == 0) and (i==0) and (not is_aoe) then
+    			color = color + 3
+    		end
+    		-- don't add space at the start
+    		if j > -max_range then
+    			result = result.." "
+    		end
+    		result = result..color
+    	end
+    	if i < max_range then
+    		result = result..";"
+    	end
+    end
+    return result
+end
+
 
 -- perpendicular to the selection 
 local function perpline_aoe(is_aoe, target_mode, min_range, max_range)
@@ -188,7 +228,7 @@ local function custom_aoe_f(is_aoe, target_mode, min_range, max_range,
         min_y = min_y and math.min(min_y, y) or y
         max_y = max_y and math.max(max_y, y) or y
         
-        if aoe_symmetry == "four_way" then
+        if aoe_symmetry == "four_way" or aoe_symmetry == "eight_way"  then
         	points[y] = points[y] or {}
 			points[y][-x] = true
 			points[-x] = points[-x] or {}
@@ -200,6 +240,14 @@ local function custom_aoe_f(is_aoe, target_mode, min_range, max_range,
 			max_x = math.max(max_x, -x)
         	min_y = math.min(min_y, -y)
         	max_y = math.max(max_y, -y)
+        	
+        	
+        	if aoe_symmetry == "eight_way"  then
+        		points[y][x] = true
+        		points[x][-y] = true
+        		points[-y][-x] = true
+        		points[-x][y] = true
+        	end
         end
         
     end
@@ -208,7 +256,7 @@ local function custom_aoe_f(is_aoe, target_mode, min_range, max_range,
     
     -- if no targeting, duplicate to the edge
     if target_mode == "none" then
-        local draw_distance = 7
+        local draw_distance = 5
         for i = 1, draw_distance do
         	for x = min_x, max_x do
         		for y = min_y, max_y do
