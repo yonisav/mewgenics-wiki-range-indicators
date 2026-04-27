@@ -1,16 +1,15 @@
 <includeonly><!-- Var declare
 -->{{#vardefine:is_aoe|{{{is_aoe|false}}} }}<!--
--->{{#vardefine:target_mode|{{{target_mode|none}}} }}<!-- tile, direction, none
+-->{{#vardefine:target_mode|{{{target_mode|Tile}}} }}<!-- tile, direction, none
 -->{{#vardefine:aoe_mode| {{{aoe_mode|standard}}} }}<!-- standard, line, cross, 8cross, cone, all, occupied_tiles, square, circle, perpline, narrow_cone, diagcross, custom
 -->{{#vardefine:min_range|{{{min_range|0}}} }}<!--
 -->{{#vardefine:max_range|{{{max_range|0}}} }}<!--
 -->{{#vardefine:aoe_excludes_self|{{{aoe_excludes_self|false}}} }}<!--
--->{{#vardefine:custom_aoe|{{{custom_aoe|no}}} }}<!--
-{{ucfirst:{{#var:aoe_mode}} }} '''{{#ifeq:{{#var:is_aoe}}|false|Range|AOE}}''' indicator<!-- handle odd cases
-{{#switch:{{#var:aoe_mode}}
-| cross = .
-| #default = &#32;for distance of {{#var:min_range}} to {{#var:max_range}}.
-}}--><templatestyles src="RangeIndicator/styles.css"/>{{#invoke:RangeIndicator
+-->{{#vardefine:custom_aoe|{{{custom_aoe|none}}} }}<!--
+-->{{#vardefine:aoe_symmetry|{{{aoe_symmetry|none}}} }}<!--
+
+
+--><templatestyles src="RangeIndicator/styles.css"/>{{#invoke:RangeIndicator
 | render
 | is_aoe={{#var:is_aoe}}
 | target_mode={{#var:target_mode}}
@@ -19,6 +18,7 @@
 | max_range={{#var:max_range}}
 | aoe_excludes_self={{#var:aoe_excludes_self}}
 | custom_aoe = {{#var:custom_aoe}}
+| aoe_symmetry = {{#var:aoe_symmetry}}
 }}<!--
 --></includeonly><noinclude>
 == Usage ==
@@ -30,6 +30,7 @@
 | min_range = <!-- default: 0 -->
 | max_range = <!-- default: 0 -->
 | aoe_excludes_self = <!-- default: False (include self)-->
+| aoe_symmetry = <!-- for custom aoe, multiply by 4 or 8 ways -->
 }}
 </syntaxhighlight>
 
@@ -68,4 +69,4 @@ Hunter spell: {{a|Scatter Shot}} (range indicator)
 | is_aoe = false
 | min_range = 3
 | max_range = 6
-}}</noinclude>
+}}[[Category:Templates]][[Category: Templates using GridShape]]</noinclude>
