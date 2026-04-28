@@ -12,8 +12,14 @@ local function standard_aoe(is_aoe, target_mode, min_range, max_range)
     	offset = 10
     end
     -- hanle abilities that cover the entire screen
-    if max_range > 14 then
-    	return "1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;"
+    if max_range >= 15 and min_range <= 1 then
+    	result = result .. "1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;"
+    	if min_range == 1 then
+    		result = result .. "1 1 1 1 3 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;"
+    	else
+    		result = result .. "1 1 1 1 4 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;1 1 1 1 1 1 1 1 1 1;"
+    	end
+    	return result 
     end
     for i=0, (max_range*2) do
     	for j=0, (max_range*2) do
@@ -40,6 +46,75 @@ local function standard_aoe(is_aoe, target_mode, min_range, max_range)
     end
     return result
 end
+
+local function circle_aoe(is_aoe, target_mode, min_range, max_range)
+    local result = ""
+    local color = 0
+    local distance = 999
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
+    for i=0, (max_range*2) do
+    	for j=0, (max_range*2) do
+    		
+    		 local distance = math.sqrt(i^2 + j^2)
+
+    		if distance >= min_range and distance <= max_range then
+    			color = (1 + offset)
+    		else
+    			color = 0
+    		end
+    		if (distance == 0) and (not is_aoe) then
+    			color = color + 3
+    		end
+    		
+    		if j > 0 then
+    			result = result.." "
+    		end
+    		result = result..color
+    	end
+    	if i < max_range*2 then
+    		result = result..";"
+    	end
+    end
+    return result
+end
+
+local function circle_aoe(is_aoe, target_mode, min_range, max_range)
+    local result = ""
+    local color = 0
+    local distance = 999
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
+    for i=0, (max_range*2) do
+    	for j=0, (max_range*2) do
+    		
+    		 local distance = math.sqrt(i^2 + j^2)
+
+    		if distance >= min_range and distance <= max_range then
+    			color = (1 + offset)
+    		else
+    			color = 0
+    		end
+    		if (distance == 0) and (not is_aoe) then
+    			color = color + 3
+    		end
+    		
+    		if j > 0 then
+    			result = result.." "
+    		end
+    		result = result..color
+    	end
+    	if i < max_range*2 then
+    		result = result..";"
+    	end
+    end
+    return result
+end
+
 
 local function cone_aoe(is_aoe, target_mode, min_range, max_range)
     local result = ""
@@ -87,7 +162,7 @@ local function line_aoe(is_aoe, target_mode, min_range, max_range)
     		if j > 0 then
     			result = result.." "
     		end
-    		if (j == 0) and (i==0) and (not is_aoe) then
+    		if (j == 0) and (i==0) then
     			color = color + 3
     		end
     		result = result..color
@@ -97,6 +172,46 @@ local function line_aoe(is_aoe, target_mode, min_range, max_range)
     	end
     end
     return result
+end
+
+local function square_aoe(is_aoe, target_mode, min_range, max_range)
+    local result = ""
+    local color = 0
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
+    -- account for the default
+    if max_range == 0 then
+    	max_range = 1
+    	is_aoe = false
+    end
+    if max_range >= 10 then -- above 10 is full board, use the existing function
+    	return standard_aoe(is_aoe, target_mode, min_range, 15)
+    else
+	    for i = -max_range, max_range do
+	    	for j = -max_range, max_range do
+    			if (math.abs(i) >= min_range and math.abs(i) <= max_range) or
+    				(math.abs(j) >= min_range and math.abs(j) <= max_range) then
+    				color = (1 + offset)
+    			else
+    				color = 0
+	    		end
+    			if (j == 0) and (i==0) and (not is_aoe) then
+    				color = color + 3
+    			end
+    			-- don't add space at the start
+    			if j > -max_range then
+    				result = result.." "
+    			end
+    			result = result..color
+    		end
+    		if i < max_range then
+    			result = result..";"
+    		end
+    	end
+    	return result
+    end
 end
 
 local function cross_aoe(is_aoe, target_mode, min_range, max_range)
@@ -149,6 +264,42 @@ local function  diagcross_aoe(is_aoe, target_mode, min_range, max_range)
     for i = -max_range, max_range do
     	for j = -max_range, max_range do
     		if  math.abs(i) == math.abs(j) and math.abs(i) >= min_range then
+    			color = (1 + offset)
+    		else
+    			color = 0
+    		end
+    		if (j == 0) and (i==0) and (not is_aoe) then
+    			color = color + 3
+    		end
+    		-- don't add space at the start
+    		if j > -max_range then
+    			result = result.." "
+    		end
+    		result = result..color
+    	end
+    	if i < max_range then
+    		result = result..";"
+    	end
+    end
+    return result
+end
+
+local function  e_cross_aoe(is_aoe, target_mode, min_range, max_range)
+    local result = ""
+    local color = 0
+    local offset = 0
+   	if is_aoe then
+    	offset = 10
+    end
+    -- account for the default
+    if max_range == 0 then
+    	max_range = 1
+    	is_aoe = false
+    end
+    for i = -max_range, max_range do
+    	for j = -max_range, max_range do
+    		if  math.abs(i) == math.abs(j) and math.abs(i) >= min_range or
+    		(j == 0 and math.abs(i) >= min_range) or (i == 0 and math.abs(j) >= min_range) then
     			color = (1 + offset)
     		else
     			color = 0
@@ -337,6 +488,8 @@ function p.render(frame)
 	-- select the correct shape
     if aoe_mode == "standard" then
     	grid_string = standard_aoe(is_aoe, target_mode, min_range, max_range)
+    elseif aoe_mode == "all" then --use the premade all board mode 
+    	grid_string = standard_aoe(is_aoe, target_mode, min_range, 15)
     elseif aoe_mode == "cone" then
     	grid_string = cone_aoe(is_aoe, target_mode, min_range, max_range)
     elseif aoe_mode == "line" then
