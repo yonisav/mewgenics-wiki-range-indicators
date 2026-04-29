@@ -1,12 +1,12 @@
 
 
-GON_FILES_ARRAY = ['basic_attacks.gon', 'basic_movement.gon', 'butcher_abilities.gon',
-'colorless_abilities.gon', 'combined.csv', 'consumable_item_abilities.gon', 'contextual_abilities.gon',
-'druid_abilities.gon', 'fighter_abilities.gon', 'hunter_abilities.gon', 'jester_abilities.gon', 'mage_abilities.gon',
-'medic_abilities.gon', 'misc_abilities.gon', 'monk_abilities.gon', 'necromancer_abilities.gon', 'psychic_abilities.gon',
-'tank_abilities.gon', 'thief_abilities.gon', 'tinkerer_abilities.gon']
+GON_FILES_ARRAY = ['gons/necromancer_abilities.gon', 'gons/basic_attacks.gon', 'gons/basic_movement.gon', 'gons/butcher_abilities.gon',
+'gons/colorless_abilities.gon', 'gons/combined.csv', 'gons/contextual_abilities.gon',
+'gons/druid_abilities.gon', 'gons/fighter_abilities.gon', 'gons/hunter_abilities.gon', 'gons/jester_abilities.gon', 'gons/mage_abilities.gon',
+'gons/medic_abilities.gon', 'gons/misc_abilities.gon', 'gons/monk_abilities.gon', 'gons/psychic_abilities.gon',
+'gons/tank_abilities.gon', 'gons/thief_abilities.gon', 'gons/tinkerer_abilities.gon']
 
-TEMPLATES_FILE = 'ability_templates.gon'
+TEMPLATES_FILE = 'gons/ability_templates.gon'
 
 class Custom_AOE:
     def __init__(self, custom_aoe:str="", custom_aoe_mirror:str="", mirror_custom_aoe:str="False", dont_orient_aoe:str="False",
@@ -38,17 +38,18 @@ class Ability_target:
         self.max_aoe = max_aoe
         self.min_aoe = min_aoe
         self.aoe_mode = aoe_mode
-        self.custom_aoe = None
+        self.aoe_excludes_self = False
+        self.custom_aoe:Custom_AOE = None
         #range info
         self.min_range = min_range
         self.max_range = max_range
         self.range_mode = range_mode
-        self.custom_range = None
+        self.custom_range:Custom_AOE = None
         # fields for printing later
         self.has_aoe = False
         self.has_range = False
         self.is_upgrade = False
-        self.upgrade = None
+        self.upgrade:Ability_target = None
         self. origin_file = orign_file
         self.errors = ""
 
@@ -56,9 +57,9 @@ class Ability_target:
             self.is_upgrade = True
 
     def __str__(self):
-        return (f"name={self.name}, target_mode={self.target_mode}, max_aoe={self.max_aoe}, min_aoe={self.min_aoe}, aoe_mode={self.aoe_mode}"
-                f"custom_aoe={self.custom_aoe}, min_range={self.min_range}, max_range={self.max_range}, range_mode={self.range_mode}, self.custom_range={self.custom_range},"
-                f"has_aoe={self.has_aoe}, has_range={self.has_range}, is_upgrade={self.is_upgrade}\n{self.errors=}\nupgrade={self.upgrade}")
+        return f"""name={self.name}, target_mode={self.target_mode}, max_aoe={self.max_aoe}, min_aoe={self.min_aoe}, aoe_mode={self.aoe_mode}, 
+custom_aoe={self.custom_aoe}, min_range={self.min_range}, max_range={self.max_range}, range_mode={self.range_mode}, self.custom_range={self.custom_range}, 
+has_aoe={self.has_aoe}, has_range={self.has_range}, is_upgrade={self.is_upgrade}\n{self.errors=}\nupgrade={self.upgrade}"""
 
     def __repr__(self):
         return str(self)
@@ -165,6 +166,8 @@ def parse_ability_target_recu(ability, interest, file) -> bool:
                                 ability.errors += f"max aoe = {maxa}, "
                             if ability.max_aoe > 0:
                                 ability.has_aoe = True
+                            else:
+                                ability.has_aoe = False #this needs to be done for if the ability overloads inheritance
                         elif split_line[0] == "aoe_mode":
                             ability.aoe_mode = split_line[1]
                         elif split_line[0] == "min_range":
@@ -190,6 +193,8 @@ def parse_ability_target_recu(ability, interest, file) -> bool:
                                 ability.errors += f"max range = {maxr}, "
                             if ability.max_range > 0:
                                 ability.has_range = True
+                            else:
+                                ability.has_range = False #this needs to be done for if the ability overloads inheritance
                         elif split_line[0] == "range_mode":
                             ability.range_mode = split_line[1]
                         elif split_line[0] == "aoe_symmetry":
@@ -200,6 +205,7 @@ def parse_ability_target_recu(ability, interest, file) -> bool:
                         elif split_line[0] == "target_mode":
                             ability.target_mode = split_line[1]
                         elif split_line[0] == "custom_aoe":
+                            ability.has_aoe = True
                             if not "]" in line:
                                 aoe = ""
                                 while line != "]":
@@ -220,6 +226,7 @@ def parse_ability_target_recu(ability, interest, file) -> bool:
                                 else:
                                     ability.custom_aoe = Custom_AOE(custom_aoe=aoe)
                         elif split_line[0] == "custom_range":
+                            ability.has_range = True
                             if not "]" in line:
                                 r_aoe = ""
                                 while line != "]":
@@ -228,10 +235,18 @@ def parse_ability_target_recu(ability, interest, file) -> bool:
                                         r_aoe = r_aoe[:-2]
                                     else:
                                         r_aoe += line + ", "
-                                ability.custom_range = Custom_AOE(custom_aoe=r_aoe)
+                                if ability.custom_range:
+                                    ability.custom_range.custom_aoe = aoe
+                                else:
+                                    ability.custom_range = Custom_AOE(custom_aoe=aoe)
                             else:
-                                cr_index = line.find("[")+1
-                                ability.custom_range = Custom_AOE(custom_aoe=line[cr_index:-1])
+                                ca_index = line.find("[") + 1
+                                aoe = line[ca_index:-1]
+                                if ability.custom_range:
+                                    ability.custom_range.custom_aoe = aoe
+                                else:
+                                    ability.custom_range = Custom_AOE(custom_aoe=aoe)
+
 
             # After level processing is  done increase level
             if "{" in line:
@@ -245,21 +260,56 @@ def generate_formatted_item_list()->dict[str,Ability_target]:
     ability_dp: dict[str, Ability_target] = {}
     i = 0 #for testing
     #build the enemies, call recursion to solve inheritance
-    with open("abilities.txt", mode='w', encoding='utf-8') as f_out:
+    with (open("abilities.txt", mode='w', encoding='utf-8') as f_out):
         for file in GON_FILES_ARRAY:
             # i = i + 1
             if i > 3:
                 break
             create_interesting_dictionary(file, ability_d)
+
+        #Fill the values
         for ability in ability_d.keys():
             if not parse_ability_target_recu(ability_d[ability], ability, ability_d[ability].origin_file):
                 print("this shouldn't happen")
 
+        #filter out uninteresting values
+        for ability in ability_d.keys():
+
+            # Direction overrides the range
+            if ability_d[ability].target_mode == "direction":
+                ability_d[ability].has_range = True
+                ability_d[ability].range_mode = "cross"
+                ability_d[ability].min_range = ability_d[ability].min_aoe
+                ability_d[ability].max_range = ability_d[ability].max_aoe
+
+            # All overrides the range
+            if ability_d[ability].target_mode == "direction":
+                ability_d[ability].has_range = False
+
+            # if upgrade is identical, remove it
+            if ability_d[ability].upgrade:
+                if (ability_d[ability].max_range == ability_d[ability].upgrade.max_range
+                    and ability_d[ability].min_range == ability_d[ability].upgrade.min_range
+                    and ability_d[ability].max_aoe == ability_d[ability].upgrade.max_aoe
+                    and ability_d[ability].min_aoe == ability_d[ability].upgrade.min_aoe
+                    and ability_d[ability].custom_aoe == ability_d[ability].upgrade.custom_aoe
+                    and ability_d[ability].custom_range == ability_d[ability].upgrade.custom_range):
+                    ability_d[ability].upgrade = None
+
+            #Don't copy upgrades
+            if ability_d[ability].is_upgrade:
+                continue
+
             # copy the interesting values to a new dict
-            if (ability_d[ability].has_range or  ability_d[ability].has_aoe or ability_d[ability].custom_aoe
-                or ability_d[ability].custom_range or ability_d[ability].upgrade):
+            if (ability_d[ability].has_range or ability_d[ability].has_aoe or ability_d[ability].custom_aoe
+                or ability_d[ability].custom_range):
                 ability_dp[ability] = ability_d[ability]
-        print(ability_d["ScatterShot"])
+            elif ability_d[ability].upgrade:
+                if (ability_d[ability].upgrade.has_range or ability_d[ability].upgrade.has_aoe
+                        or ability_d[ability].upgrade.custom_aoe or ability_d[ability].custom_range):
+                    ability_dp[ability] = ability_d[ability]
+
+        # Print to file for debugging
         for ability in ability_dp.keys():
             f_out.write(f"{ability_dp[ability]}\n")
             if ability_dp[ability].custom_aoe:
@@ -268,7 +318,7 @@ def generate_formatted_item_list()->dict[str,Ability_target]:
                 f_out.write(f"{ability_dp[ability].name} custom_range={ability_dp[ability].custom_range}\n")
 
 
-    return ability_d
+    return ability_dp
 
 # Run the process
 generate_formatted_item_list()
