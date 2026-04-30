@@ -195,7 +195,7 @@ def main():
 
             page.text = new_text
             page.save(summary="Adding range and aoe indicators.")
-            i += 1 #increment after making changes
+            #i += 1 #increment after making changes
 
 
 if __name__ == "__main__":
