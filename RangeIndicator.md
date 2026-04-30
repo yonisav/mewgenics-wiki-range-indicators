@@ -7,9 +7,9 @@
 -->{{#vardefine:aoe_excludes_self|{{{aoe_excludes_self|false}}} }}<!--
 -->{{#vardefine:custom_aoe|{{{custom_aoe|none}}} }}<!--
 -->{{#vardefine:aoe_symmetry|{{{aoe_symmetry|none}}} }}<!--
+-->{{#vardefine:is_warn|{{{is_warn|false}}} }}<!-- for ! indicator
 
-
---><templatestyles src="RangeIndicator/styles.css"/>{{#invoke:RangeIndicator
+--><templatestyles src="RangeIndicator/styles.css" /><div class="{{{class|}}}" {{#if:{{{cell_size|}}}|style="--shape-cell-size-override: {{{cell_size|16px}}}|}};">{{#invoke:RangeIndicator
 | render
 | is_aoe={{#var:is_aoe}}
 | target_mode={{#var:target_mode}}
@@ -19,7 +19,8 @@
 | aoe_excludes_self={{#var:aoe_excludes_self}}
 | custom_aoe = {{#var:custom_aoe}}
 | aoe_symmetry = {{#var:aoe_symmetry}}
-}}<!--
+| is_warn = {{#var:is_warn}}
+}}</div><!--
 --></includeonly><noinclude>
 == Usage ==
 <syntaxhighlight lang=wikitext>
@@ -31,12 +32,16 @@
 | max_range = <!-- default: 0 -->
 | aoe_excludes_self = <!-- default: False (include self)-->
 | aoe_symmetry = <!-- for custom aoe, multiply by 4 or 8 ways -->
+| is_warn = <!-- For warning indicator (!) -->
+
+| cell_size = <!-- Adjust the default cell size. Default: 16px -->
+| class = <!-- Add a custom css class. Presumably using [[Template:RangeIndicator/styles.css]]. -->
 }}
 </syntaxhighlight>
 
-<!-- TODO: Supports the following target_modes: <code>tile, direction, none</code> -->
+Supports the following target_modes: <code>tile, none</code><!-- TODO: direction,  -->
 
-Supports the following aoe_modes: <code>standard, line, cone, cross, perpline, diagcross, <!-- TODO:8cross, all, occupied_tiles, square, circle,  custom --></code>
+Supports the following aoe_modes: <code>standard, line, cone, cross,  diagcross, 8cross, perpline, all, square, circle, custom  <!-- TODO:  occupied_tiles, --></code>
 
 == Example ==
 Mage spell: {{a|Mega Blast}}
@@ -64,9 +69,11 @@ Hunter spell: {{a|Scatter Shot}} (range indicator)
 | is_aoe = false
 | min_range = 3
 | max_range = 6
+| cell_size = 12px
 }}</syntaxhighlight>
 {{RangeIndicator
 | is_aoe = false
 | min_range = 3
 | max_range = 6
+| cell_size = 12px
 }}[[Category:Templates]][[Category: Templates using GridShape]]</noinclude>
